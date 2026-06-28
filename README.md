@@ -22,7 +22,7 @@ Exposes Paperclip's REST API as [Model Context Protocol](https://modelcontextpro
 
 - Python 3.10+
 - A running [Paperclip](https://github.com/paperclipai/paperclip) instance
-- An Agent API key (generated in Paperclip UI → Settings → API Keys)
+- A board API key (generated via the CLI auth challenge flow — see below)
 
 ---
 
@@ -62,13 +62,36 @@ cp .env.example .env
 PAPERCLIP_BASE_URL=http://localhost:3100/api   # default, change if needed
 PAPERCLIP_API_KEY=your_api_key_here
 PAPERCLIP_COMPANY_ID=your_company_uuid_here
+PAPERCLIP_SERVER_NAME=paperclip               # optional, default: "paperclip"
 ```
 
 > **Security**: Never commit `.env` to version control. It is listed in `.gitignore`.
 
 **Where to find these values:**
-- `PAPERCLIP_API_KEY` — Paperclip UI → Settings → API Keys → New Key
-- `PAPERCLIP_COMPANY_ID` — visible in the URL when viewing your company: `/companies/{uuid}`
+- `PAPERCLIP_API_KEY` — board API key with prefix `pcp_board_`. See [Paperclip board API key docs](https://docs.paperclip.ing/reference/api/authentication/board-api-keys). Generate via the CLI auth challenge flow:
+  ```bash
+  # 1. Create a challenge
+  curl -s -X POST http://YOUR_HOST/api/cli-auth/challenges \
+    -H "Content-Type: application/json" \
+    -d '{"command":"login"}'
+  # Response includes boardApiToken and approvalUrl
+
+  # 2. Open approvalUrl in your browser and approve
+
+  # 3. Use boardApiToken as PAPERCLIP_API_KEY
+  ```
+  Verify the key and find your company IDs:
+  ```bash
+  curl -s http://YOUR_HOST/api/cli-auth/me \
+    -H "Authorization: Bearer pcp_board_YOUR_KEY"
+  # Returns user, companyIds, memberships
+
+  curl -s http://YOUR_HOST/api/companies \
+    -H "Authorization: Bearer pcp_board_YOUR_KEY"
+  # Returns company names mapped to UUIDs
+  ```
+- `PAPERCLIP_COMPANY_ID` — UUID from the `/api/companies` response above
+- `PAPERCLIP_SERVER_NAME` — any string; only matters when running multiple instances (see below)
 
 ---
 
@@ -90,31 +113,46 @@ paperclip-mcp --transport stdio
 paperclip-mcp --help
 ```
 
-### Register with Claude Code
+### Register with an MCP client
 
-```bash
-# HTTP transport (persistent — survives Claude restarts)
-claude mcp add paperclip --transport http http://localhost:9011/mcp
-
-# stdio transport (Claude Desktop — add to claude_desktop_config.json)
-```
-
-#### Claude Desktop (`claude_desktop_config.json`)
+Add an entry to the `mcpServers` object in your client's config file:
 
 ```json
 {
   "mcpServers": {
     "paperclip": {
-      "command": "paperclip-mcp",
-      "args": ["--transport", "stdio"],
+      "command": "uvx",
+      "args": ["paperclip-mcp", "--transport", "stdio"],
       "env": {
-        "PAPERCLIP_API_KEY": "your_api_key",
-        "PAPERCLIP_COMPANY_ID": "your_company_uuid"
+        "PAPERCLIP_API_KEY": "pcp_board_...",
+        "PAPERCLIP_COMPANY_ID": "your_company_uuid",
+        "PAPERCLIP_BASE_URL": "http://your-paperclip-host/api"
       }
     }
   }
 }
 ```
+
+**Claude Code** — use `claude mcp add` (recommended) or edit the config directly:
+
+```bash
+# User-level (all projects)
+claude mcp add paperclip -s user \
+  -e PAPERCLIP_API_KEY=pcp_board_... \
+  -e PAPERCLIP_COMPANY_ID=your_company_uuid \
+  -e PAPERCLIP_BASE_URL=http://your-paperclip-host/api \
+  -- uvx paperclip-mcp --transport stdio
+```
+
+Or edit `~/.claude.json` directly for user-level config. For project-level:
+- `.claude/settings.json` — checked in
+- `.mcp.json` — separate file, gitignore-able
+
+> **Note:** `~/.claude/settings.json` is for Claude Code settings (permissions, hooks, model) — MCP servers placed there are **ignored**. Use `~/.claude.json` or `claude mcp add -s user` instead.
+
+**Claude Desktop** — `mcpServers` goes in:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ---
 
@@ -138,6 +176,41 @@ Once registered, you can ask your AI assistant:
 "Wake up the Administration agent now"
 → calls invoke_agent_heartbeat(agent_id="...")
 ```
+
+---
+
+## Multiple companies
+
+Add one `mcpServers` entry per company (see config file locations above). Use a distinct `PAPERCLIP_SERVER_NAME` and `PAPERCLIP_COMPANY_ID` per entry; the same board API key works across all companies.
+
+```json
+{
+  "mcpServers": {
+    "paperclip-acme": {
+      "command": "uvx",
+      "args": ["paperclip-mcp", "--transport", "stdio"],
+      "env": {
+        "PAPERCLIP_SERVER_NAME": "paperclip-acme",
+        "PAPERCLIP_API_KEY": "pcp_board_...",
+        "PAPERCLIP_COMPANY_ID": "uuid_acme",
+        "PAPERCLIP_BASE_URL": "http://your-paperclip-host/api"
+      }
+    },
+    "paperclip-school": {
+      "command": "uvx",
+      "args": ["paperclip-mcp", "--transport", "stdio"],
+      "env": {
+        "PAPERCLIP_SERVER_NAME": "paperclip-school",
+        "PAPERCLIP_API_KEY": "pcp_board_...",
+        "PAPERCLIP_COMPANY_ID": "uuid_school",
+        "PAPERCLIP_BASE_URL": "http://your-paperclip-host/api"
+      }
+    }
+  }
+}
+```
+
+The AI assistant picks the right server by name — no per-request company switching needed.
 
 ---
 
@@ -177,7 +250,7 @@ pytest
 - **Who should use this MCP**: Human operators managing agents via Claude Code or Claude Desktop.
 - **Do agents need this MCP?**: No — Paperclip agents already interact with the REST API directly via HTTP in their HEARTBEAT protocol. This MCP is for the human operator layer.
 - **Hermes agents**: If you switch to [Hermes](https://github.com/NousResearch/hermes-paperclip-adapter), this MCP is automatically available since Hermes supports MCP natively.
-- **Transport choice**: Use `streamable-http` for Claude Code and mcp-proxy integrations. Use `stdio` for Claude Desktop.
+- **Transport choice**: Use `stdio` for both Claude Code (CLI) and Claude Desktop. Use `streamable-http` only for mcp-proxy or HTTP-native integrations.
 - **Security**: The server binds to `127.0.0.1` by default (localhost only). Do not expose it publicly — it carries your Paperclip API key.
 
 ---
