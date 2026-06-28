@@ -1,7 +1,6 @@
 # Environment — never commit secrets
 .env
 *.env.local
-.mcp.json
 
 # Python
 __pycache__/
