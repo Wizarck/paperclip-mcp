@@ -14,6 +14,11 @@ Configuration (environment variables):
     PAPERCLIP_COMPANY_ID   Required. Company UUID shown in the Paperclip UI URL
                            when viewing your company: /companies/{uuid}.
     PAPERCLIP_BASE_URL     Optional. Default: http://localhost:3100/api
+    PAPERCLIP_SERVER_NAME  Optional. MCP server name reported to the client.
+                           Set a distinct value per instance when running
+                           multiple servers for different companies
+                           (e.g. "paperclip-acme", "paperclip-school").
+                           Default: "paperclip"
 """
 
 from __future__ import annotations
@@ -36,9 +41,10 @@ try:
 except ImportError:
     pass  # python-dotenv is optional; env vars can be set by the shell
 
-BASE_URL: str = os.environ.get("PAPERCLIP_BASE_URL", "http://localhost:3100/api").rstrip("/")
-API_KEY: str  = os.environ.get("PAPERCLIP_API_KEY", "")
-COMPANY: str  = os.environ.get("PAPERCLIP_COMPANY_ID", "")
+BASE_URL: str     = os.environ.get("PAPERCLIP_BASE_URL", "http://localhost:3100/api").rstrip("/")
+API_KEY: str      = os.environ.get("PAPERCLIP_API_KEY", "")
+COMPANY: str      = os.environ.get("PAPERCLIP_COMPANY_ID", "")
+SERVER_NAME: str  = os.environ.get("PAPERCLIP_SERVER_NAME", "paperclip")
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 
@@ -158,7 +164,7 @@ async def _lifespan(_server: FastMCP):  # type: ignore[type-arg]
 # ── MCP Server ─────────────────────────────────────────────────────────────────
 
 mcp = FastMCP(
-    name="paperclip",
+    name=SERVER_NAME,
     instructions=(
         "Manage a Paperclip AI agent orchestration platform. "
         "Use these tools to create and track issues (tasks), inspect agents, "
