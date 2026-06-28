@@ -113,31 +113,34 @@ paperclip-mcp --transport stdio
 paperclip-mcp --help
 ```
 
-### Register with Claude Code
+### Register with an MCP client
 
-```bash
-# HTTP transport (persistent — survives Claude restarts)
-claude mcp add paperclip --transport http http://localhost:9011/mcp
-
-# stdio transport (Claude Desktop — add to claude_desktop_config.json)
-```
-
-#### Claude Desktop (`claude_desktop_config.json`)
+Add an entry to the `mcpServers` object in your client's config file:
 
 ```json
 {
   "mcpServers": {
     "paperclip": {
-      "command": "paperclip-mcp",
-      "args": ["--transport", "stdio"],
+      "command": "uvx",
+      "args": ["paperclip-mcp"],
       "env": {
-        "PAPERCLIP_API_KEY": "your_api_key",
-        "PAPERCLIP_COMPANY_ID": "your_company_uuid"
+        "PAPERCLIP_API_KEY": "pcp_board_...",
+        "PAPERCLIP_COMPANY_ID": "your_company_uuid",
+        "PAPERCLIP_BASE_URL": "http://your-paperclip-host/api"
       }
     }
   }
 }
 ```
+
+**Claude Code** — `mcpServers` can go in any of:
+- `~/.claude/settings.json` — user-level (all projects)
+- `.claude/settings.json` — project-level (checked in)
+- `.mcp.json` — project-level (separate file, gitignore-able)
+
+**Claude Desktop** — `mcpServers` goes in:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ---
 
@@ -166,46 +169,29 @@ Once registered, you can ask your AI assistant:
 
 ## Multiple companies
 
-Run one server instance per company, each with a distinct name and port.
-
-**Claude Code** — register each instance separately:
-
-```bash
-PAPERCLIP_SERVER_NAME=paperclip-acme \
-PAPERCLIP_API_KEY=key_acme \
-PAPERCLIP_COMPANY_ID=uuid_acme \
-paperclip-mcp --port 9011 &
-
-PAPERCLIP_SERVER_NAME=paperclip-school \
-PAPERCLIP_API_KEY=key_school \
-PAPERCLIP_COMPANY_ID=uuid_school \
-paperclip-mcp --port 9012 &
-
-claude mcp add paperclip-acme   --transport http http://localhost:9011/mcp
-claude mcp add paperclip-school --transport http http://localhost:9012/mcp
-```
-
-**Claude Desktop** — add both entries to `claude_desktop_config.json`:
+Add one `mcpServers` entry per company (see config file locations above). Use a distinct `PAPERCLIP_SERVER_NAME` and `PAPERCLIP_COMPANY_ID` per entry; the same board API key works across all companies.
 
 ```json
 {
   "mcpServers": {
     "paperclip-acme": {
-      "command": "paperclip-mcp",
-      "args": ["--transport", "stdio"],
+      "command": "uvx",
+      "args": ["paperclip-mcp"],
       "env": {
         "PAPERCLIP_SERVER_NAME": "paperclip-acme",
-        "PAPERCLIP_API_KEY": "key_acme",
-        "PAPERCLIP_COMPANY_ID": "uuid_acme"
+        "PAPERCLIP_API_KEY": "pcp_board_...",
+        "PAPERCLIP_COMPANY_ID": "uuid_acme",
+        "PAPERCLIP_BASE_URL": "http://your-paperclip-host/api"
       }
     },
     "paperclip-school": {
-      "command": "paperclip-mcp",
-      "args": ["--transport", "stdio"],
+      "command": "uvx",
+      "args": ["paperclip-mcp"],
       "env": {
         "PAPERCLIP_SERVER_NAME": "paperclip-school",
-        "PAPERCLIP_API_KEY": "key_school",
-        "PAPERCLIP_COMPANY_ID": "uuid_school"
+        "PAPERCLIP_API_KEY": "pcp_board_...",
+        "PAPERCLIP_COMPANY_ID": "uuid_school",
+        "PAPERCLIP_BASE_URL": "http://your-paperclip-host/api"
       }
     }
   }
