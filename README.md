@@ -133,10 +133,22 @@ Add an entry to the `mcpServers` object in your client's config file:
 }
 ```
 
-**Claude Code** — `mcpServers` can go in any of:
-- `~/.claude/settings.json` — user-level (all projects)
-- `.claude/settings.json` — project-level (checked in)
-- `.mcp.json` — project-level (separate file, gitignore-able)
+**Claude Code** — use `claude mcp add` (recommended) or edit the config directly:
+
+```bash
+# User-level (all projects)
+claude mcp add paperclip -s user \
+  -e PAPERCLIP_API_KEY=pcp_board_... \
+  -e PAPERCLIP_COMPANY_ID=your_company_uuid \
+  -e PAPERCLIP_BASE_URL=http://your-paperclip-host/api \
+  -- uvx paperclip-mcp --transport stdio
+```
+
+Or edit `~/.claude.json` directly for user-level config. For project-level:
+- `.claude/settings.json` — checked in
+- `.mcp.json` — separate file, gitignore-able
+
+> **Note:** `~/.claude/settings.json` is for Claude Code settings (permissions, hooks, model) — MCP servers placed there are **ignored**. Use `~/.claude.json` or `claude mcp add -s user` instead.
 
 **Claude Desktop** — `mcpServers` goes in:
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -238,7 +250,7 @@ pytest
 - **Who should use this MCP**: Human operators managing agents via Claude Code or Claude Desktop.
 - **Do agents need this MCP?**: No — Paperclip agents already interact with the REST API directly via HTTP in their HEARTBEAT protocol. This MCP is for the human operator layer.
 - **Hermes agents**: If you switch to [Hermes](https://github.com/NousResearch/hermes-paperclip-adapter), this MCP is automatically available since Hermes supports MCP natively.
-- **Transport choice**: Use `streamable-http` for Claude Code and mcp-proxy integrations. Use `stdio` for Claude Desktop.
+- **Transport choice**: Use `stdio` for both Claude Code (CLI) and Claude Desktop. Use `streamable-http` only for mcp-proxy or HTTP-native integrations.
 - **Security**: The server binds to `127.0.0.1` by default (localhost only). Do not expose it publicly — it carries your Paperclip API key.
 
 ---
