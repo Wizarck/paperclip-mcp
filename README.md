@@ -122,7 +122,7 @@ Add an entry to the `mcpServers` object in your client's config file:
   "mcpServers": {
     "paperclip": {
       "command": "uvx",
-      "args": ["paperclip-mcp"],
+      "args": ["paperclip-mcp", "--transport", "stdio"],
       "env": {
         "PAPERCLIP_API_KEY": "pcp_board_...",
         "PAPERCLIP_COMPANY_ID": "your_company_uuid",
@@ -188,7 +188,7 @@ Add one `mcpServers` entry per company (see config file locations above). Use a 
   "mcpServers": {
     "paperclip-acme": {
       "command": "uvx",
-      "args": ["paperclip-mcp"],
+      "args": ["paperclip-mcp", "--transport", "stdio"],
       "env": {
         "PAPERCLIP_SERVER_NAME": "paperclip-acme",
         "PAPERCLIP_API_KEY": "pcp_board_...",
@@ -198,7 +198,7 @@ Add one `mcpServers` entry per company (see config file locations above). Use a 
     },
     "paperclip-school": {
       "command": "uvx",
-      "args": ["paperclip-mcp"],
+      "args": ["paperclip-mcp", "--transport", "stdio"],
       "env": {
         "PAPERCLIP_SERVER_NAME": "paperclip-school",
         "PAPERCLIP_API_KEY": "pcp_board_...",

@@ -556,8 +556,8 @@ def main() -> None:
         choices=["streamable-http", "sse", "stdio"],
         help=(
             "MCP transport protocol. "
-            "'streamable-http' for Claude Code / mcp-proxy; "
-            "'stdio' for Claude Desktop."
+            "'stdio' for Claude Code and Claude Desktop (recommended); "
+            "'streamable-http' for mcp-proxy or HTTP-native integrations."
         ),
     )
     args = parser.parse_args()
