@@ -62,6 +62,7 @@ cp .env.example .env
 PAPERCLIP_BASE_URL=http://localhost:3100/api   # default, change if needed
 PAPERCLIP_API_KEY=your_api_key_here
 PAPERCLIP_COMPANY_ID=your_company_uuid_here
+PAPERCLIP_SERVER_NAME=paperclip               # optional, default: "paperclip"
 ```
 
 > **Security**: Never commit `.env` to version control. It is listed in `.gitignore`.
@@ -69,6 +70,7 @@ PAPERCLIP_COMPANY_ID=your_company_uuid_here
 **Where to find these values:**
 - `PAPERCLIP_API_KEY` — Paperclip UI → Settings → API Keys → New Key
 - `PAPERCLIP_COMPANY_ID` — visible in the URL when viewing your company: `/companies/{uuid}`
+- `PAPERCLIP_SERVER_NAME` — any string; only matters when running multiple instances (see below)
 
 ---
 
@@ -138,6 +140,58 @@ Once registered, you can ask your AI assistant:
 "Wake up the Administration agent now"
 → calls invoke_agent_heartbeat(agent_id="...")
 ```
+
+---
+
+## Multiple companies
+
+Run one server instance per company, each with a distinct name and port.
+
+**Claude Code** — register each instance separately:
+
+```bash
+PAPERCLIP_SERVER_NAME=paperclip-acme \
+PAPERCLIP_API_KEY=key_acme \
+PAPERCLIP_COMPANY_ID=uuid_acme \
+paperclip-mcp --port 9011 &
+
+PAPERCLIP_SERVER_NAME=paperclip-school \
+PAPERCLIP_API_KEY=key_school \
+PAPERCLIP_COMPANY_ID=uuid_school \
+paperclip-mcp --port 9012 &
+
+claude mcp add paperclip-acme   --transport http http://localhost:9011/mcp
+claude mcp add paperclip-school --transport http http://localhost:9012/mcp
+```
+
+**Claude Desktop** — add both entries to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "paperclip-acme": {
+      "command": "paperclip-mcp",
+      "args": ["--transport", "stdio"],
+      "env": {
+        "PAPERCLIP_SERVER_NAME": "paperclip-acme",
+        "PAPERCLIP_API_KEY": "key_acme",
+        "PAPERCLIP_COMPANY_ID": "uuid_acme"
+      }
+    },
+    "paperclip-school": {
+      "command": "paperclip-mcp",
+      "args": ["--transport", "stdio"],
+      "env": {
+        "PAPERCLIP_SERVER_NAME": "paperclip-school",
+        "PAPERCLIP_API_KEY": "key_school",
+        "PAPERCLIP_COMPANY_ID": "uuid_school"
+      }
+    }
+  }
+}
+```
+
+The AI assistant picks the right server by name — no per-request company switching needed.
 
 ---
 
