@@ -22,7 +22,7 @@ Exposes Paperclip's REST API as [Model Context Protocol](https://modelcontextpro
 
 - Python 3.10+
 - A running [Paperclip](https://github.com/paperclipai/paperclip) instance
-- An Agent API key (generated in Paperclip UI → Settings → API Keys)
+- A board API key (generated via the CLI auth challenge flow — see below)
 
 ---
 
@@ -68,8 +68,29 @@ PAPERCLIP_SERVER_NAME=paperclip               # optional, default: "paperclip"
 > **Security**: Never commit `.env` to version control. It is listed in `.gitignore`.
 
 **Where to find these values:**
-- `PAPERCLIP_API_KEY` — Paperclip UI → Settings → API Keys → New Key
-- `PAPERCLIP_COMPANY_ID` — visible in the URL when viewing your company: `/companies/{uuid}`
+- `PAPERCLIP_API_KEY` — board API key with prefix `pcp_board_`. See [Paperclip board API key docs](https://docs.paperclip.ing/reference/api/authentication/board-api-keys). Generate via the CLI auth challenge flow:
+  ```bash
+  # 1. Create a challenge
+  curl -s -X POST http://YOUR_HOST/api/cli-auth/challenges \
+    -H "Content-Type: application/json" \
+    -d '{"command":"login"}'
+  # Response includes boardApiToken and approvalUrl
+
+  # 2. Open approvalUrl in your browser and approve
+
+  # 3. Use boardApiToken as PAPERCLIP_API_KEY
+  ```
+  Verify the key and find your company IDs:
+  ```bash
+  curl -s http://YOUR_HOST/api/cli-auth/me \
+    -H "Authorization: Bearer pcp_board_YOUR_KEY"
+  # Returns user, companyIds, memberships
+
+  curl -s http://YOUR_HOST/api/companies \
+    -H "Authorization: Bearer pcp_board_YOUR_KEY"
+  # Returns company names mapped to UUIDs
+  ```
+- `PAPERCLIP_COMPANY_ID` — UUID from the `/api/companies` response above
 - `PAPERCLIP_SERVER_NAME` — any string; only matters when running multiple instances (see below)
 
 ---

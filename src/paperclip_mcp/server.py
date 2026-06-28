@@ -9,8 +9,10 @@ Documentation: https://github.com/paperclipai/paperclip
 MCP spec:      https://modelcontextprotocol.io
 
 Configuration (environment variables):
-    PAPERCLIP_API_KEY      Required. Agent API key — generate in Paperclip UI:
-                           Settings → API Keys → New Key.
+    PAPERCLIP_API_KEY      Required. Board API key (prefix: pcp_board_) — generate
+                           via CLI auth challenge: POST /api/cli-auth/challenges
+                           with {"command":"login"}, approve the returned
+                           approvalUrl in a browser, then use boardApiToken.
     PAPERCLIP_COMPANY_ID   Required. Company UUID shown in the Paperclip UI URL
                            when viewing your company: /companies/{uuid}.
     PAPERCLIP_BASE_URL     Optional. Default: http://localhost:3100/api
