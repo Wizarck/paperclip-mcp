@@ -10,7 +10,7 @@ Exposes Paperclip's REST API as [Model Context Protocol](https://modelcontextpro
 
 | Category | Tools |
 |---|---|
-| **Issues** | `list_issues` · `get_issue` · `create_issue` · `update_issue` · `checkout_issue` · `release_issue` · `comment_on_issue` · `delete_issue` |
+| **Issues** | `list_issues` · `get_issue` · `list_issue_comments` · `get_issue_comment` · `list_issue_interactions` · `get_issue_thread` · `create_issue` · `update_issue` · `checkout_issue` · `release_issue` · `comment_on_issue` · `delete_issue` |
 | **Agents** | `list_agents` · `get_agent` · `invoke_agent_heartbeat` |
 | **Goals** | `list_goals` · `create_goal` · `update_goal` |
 | **Approvals** | `list_approvals` · `approve` · `reject` · `request_approval_revision` |
@@ -137,7 +137,17 @@ Once registered, you can ask your AI assistant:
 
 "Wake up the Administration agent now"
 → calls invoke_agent_heartbeat(agent_id="...")
+
+"Show me the complete discussion and pending confirmations for PAY-42"
+→ calls get_issue_thread(issue_id="PAY-42")
+
+"Fetch the complete text of comment 8f2... on PAY-42"
+→ calls get_issue_comment(issue_id="PAY-42", comment_id="8f2...")
 ```
+
+`list_activity` is an audit feed and Paperclip intentionally provides comment
+snippets there. Use the issue comment and thread tools when complete comment
+bodies or interaction payloads are required.
 
 ---
 

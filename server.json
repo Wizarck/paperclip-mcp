@@ -32,7 +32,8 @@
   },
   "capabilities": {
     "tools": [
-      "list_issues", "get_issue", "create_issue", "update_issue",
+      "list_issues", "get_issue", "list_issue_comments", "get_issue_comment",
+      "list_issue_interactions", "get_issue_thread", "create_issue", "update_issue",
       "checkout_issue", "release_issue", "comment_on_issue", "delete_issue",
       "list_agents", "get_agent", "invoke_agent_heartbeat",
       "list_goals", "create_goal", "update_goal",

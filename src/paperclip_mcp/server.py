@@ -18,6 +18,7 @@ Configuration (environment variables):
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import sys
@@ -53,6 +54,25 @@ log = logging.getLogger(__name__)
 # ── HTTP client ────────────────────────────────────────────────────────────────
 
 _HTTP_TIMEOUT = 30  # seconds
+_MAX_ISSUE_COMMENT_LIMIT = 500
+_ISSUE_COMMENT_ORDERS = frozenset({"asc", "desc"})
+
+
+def _issue_comment_params(after: str, order: str, limit: int) -> dict[str, Any]:
+    """Build validated query parameters for Paperclip's comment-list endpoint."""
+    normalized_order = order.strip().lower()
+    if normalized_order not in _ISSUE_COMMENT_ORDERS:
+        allowed = ", ".join(sorted(_ISSUE_COMMENT_ORDERS))
+        raise ValueError(f"Invalid comment order '{order}'. Expected one of: {allowed}.")
+
+    params: dict[str, Any] = {
+        "order": normalized_order,
+        "limit": max(1, min(limit, _MAX_ISSUE_COMMENT_LIMIT)),
+    }
+    normalized_after = after.strip()
+    if normalized_after:
+        params["after"] = normalized_after
+    return params
 
 
 def _headers() -> dict[str, str]:
@@ -209,6 +229,91 @@ async def get_issue(issue_id: str) -> Any:
         issue_id: Issue UUID or human-readable identifier (e.g. "CY-42").
     """
     return await _get(f"/issues/{issue_id}")
+
+
+@mcp.tool()
+async def list_issue_comments(
+    issue_id: str,
+    after: str = "",
+    order: str = "desc",
+    limit: int = 50,
+) -> Any:
+    """List full issue comments, including complete comment bodies.
+
+    Use this instead of activity ``bodySnippet`` values when the complete issue
+    discussion or disposition is required.
+
+    Args:
+        issue_id: Issue UUID or human-readable identifier (e.g. "CY-42").
+        after: Optional comment UUID cursor. Results start after this comment.
+        order: Sort order by creation time: ``asc`` or ``desc``. Default: ``desc``.
+        limit: Maximum comments to return (1-500). Default: 50.
+    """
+    try:
+        params = _issue_comment_params(after, order, limit)
+    except ValueError as exc:
+        return _err(str(exc))
+    return await _get(f"/issues/{issue_id}/comments", params)
+
+
+@mcp.tool()
+async def get_issue_comment(issue_id: str, comment_id: str) -> Any:
+    """Get one full issue comment by ID.
+
+    Args:
+        issue_id: Issue UUID or human-readable identifier (e.g. "CY-42").
+        comment_id: Comment UUID.
+    """
+    return await _get(f"/issues/{issue_id}/comments/{comment_id}")
+
+
+@mcp.tool()
+async def list_issue_interactions(issue_id: str) -> Any:
+    """List full issue-thread interactions and their payloads/results.
+
+    This includes confirmation requests, question prompts, suggested tasks, and
+    their current resolution state.
+
+    Args:
+        issue_id: Issue UUID or human-readable identifier (e.g. "CY-42").
+    """
+    return await _get(f"/issues/{issue_id}/interactions")
+
+
+@mcp.tool()
+async def get_issue_thread(
+    issue_id: str,
+    after: str = "",
+    order: str = "desc",
+    comment_limit: int = 50,
+) -> Any:
+    """Get an issue with a page of full comments and all thread interactions.
+
+    The response always has ``issue``, ``comments``, and ``interactions`` keys.
+    Each value preserves the corresponding Paperclip API response, including
+    structured errors.
+
+    Args:
+        issue_id: Issue UUID or human-readable identifier (e.g. "CY-42").
+        after: Optional comment UUID cursor. Results start after this comment.
+        order: Comment sort order: ``asc`` or ``desc``. Default: ``desc``.
+        comment_limit: Maximum comments to return (1-500). Default: 50.
+    """
+    try:
+        comment_params = _issue_comment_params(after, order, comment_limit)
+    except ValueError as exc:
+        return _err(str(exc))
+
+    issue, comments, interactions = await asyncio.gather(
+        _get(f"/issues/{issue_id}"),
+        _get(f"/issues/{issue_id}/comments", comment_params),
+        _get(f"/issues/{issue_id}/interactions"),
+    )
+    return {
+        "issue": issue,
+        "comments": comments,
+        "interactions": interactions,
+    }
 
 
 @mcp.tool()
