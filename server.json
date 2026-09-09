@@ -1,7 +1,7 @@
 {
   "$schema": "https://modelcontextprotocol.io/schemas/registry/server.json",
   "name": "paperclip-mcp",
-  "description": "MCP server for the Paperclip AI agent orchestration platform. Manage issues, agents, goals, approvals, and costs via natural language.",
+  "description": "MCP server for the Paperclip AI agent orchestration platform. Manage issues, documents, agents, goals, projects, approvals, routines, secrets, companies, and costs via natural language.",
   "version": "0.1.0",
   "license": "MIT",
   "installation": {
@@ -28,16 +28,36 @@
       "required": false,
       "secret": false,
       "default": "http://localhost:3100/api"
+    },
+    "PAPERCLIP_RUN_ID": {
+      "description": "Optional real active Paperclip heartbeat run ID. When unset, no X-Paperclip-Run-Id header is sent.",
+      "required": false,
+      "secret": false
+    },
+    "PAPERCLIP_DISABLED_TOOLS": {
+      "description": "Optional comma-separated exact tool names and/or categories to disable. Empty enables every tool.",
+      "required": false,
+      "secret": false,
+      "default": ""
     }
   },
   "capabilities": {
     "tools": [
-      "list_issues", "get_issue", "create_issue", "update_issue",
-      "checkout_issue", "release_issue", "comment_on_issue", "delete_issue",
-      "list_agents", "get_agent", "invoke_agent_heartbeat",
-      "list_goals", "create_goal", "update_goal",
-      "list_approvals", "approve", "reject", "request_approval_revision",
-      "get_cost_summary", "get_dashboard", "list_activity"
+      "list_issues", "get_issue", "create_issue", "update_issue", "checkout_issue", "release_issue", "comment_on_issue", "delete_issue",
+      "get_issue_heartbeat_context", "get_issue_blocker_diagnostics", "get_issue_wake_diagnostics", "get_issue_subtree_diagnostics", "list_issue_comments", "get_issue_comment", "list_issue_activity", "list_issue_runs",
+      "list_issue_interactions", "create_issue_interaction", "accept_issue_interaction", "reject_issue_interaction", "respond_to_issue_interaction", "withdraw_issue_interaction",
+      "list_issue_documents", "get_issue_document", "upsert_issue_document", "lock_issue_document", "unlock_issue_document", "list_issue_document_revisions", "restore_issue_document_revision", "delete_issue_document",
+      "list_document_annotations", "create_document_annotation", "reply_to_document_annotation", "resolve_document_annotation", "reopen_document_annotation",
+      "list_issue_attachments", "upload_issue_attachment", "delete_issue_attachment", "list_issue_approval_links", "link_issue_approval", "unlink_issue_approval", "archive_issue_inbox", "unarchive_issue_inbox",
+      "list_agents", "get_agent", "invoke_agent_heartbeat", "create_agent", "hire_agent", "update_agent", "update_agent_permissions", "pause_agent", "resume_agent", "terminate_agent", "delete_agent",
+      "list_agent_keys", "create_agent_key", "revoke_agent_key", "wake_agent", "get_company_org", "list_adapter_models", "detect_adapter_model", "test_adapter_environment", "list_agent_skills", "sync_agent_skills",
+      "get_agent_configuration", "list_agent_config_revisions", "get_agent_config_revision", "rollback_agent_config_revision", "list_company_agent_configurations", "update_agent_instructions_path", "get_agent_instructions_bundle", "update_agent_instructions_bundle", "get_agent_instructions_file", "put_agent_instructions_file", "delete_agent_instructions_file", "list_granted_secrets", "read_granted_secret_value",
+      "list_goals", "get_goal", "create_goal", "update_goal", "delete_goal", "list_projects", "get_project", "create_project", "update_project", "delete_project", "list_project_workspaces", "create_project_workspace", "update_project_workspace", "delete_project_workspace", "manage_workspace_runtime_service",
+      "list_approvals", "get_approval", "create_approval", "approve", "reject", "request_approval_revision", "list_approval_linked_issues", "list_approval_comments", "comment_on_approval", "resubmit_approval",
+      "get_cost_summary", "get_cost_details", "get_cost_window_spend", "get_dashboard", "list_activity",
+      "list_secret_providers", "list_secrets", "list_secret_catalog", "create_secret", "update_secret", "rotate_secret", "delete_secret", "list_secret_proposals", "approve_secret_proposal", "reject_secret_proposal", "list_my_secret_proposals", "create_secret_proposal", "withdraw_secret_proposal",
+      "list_routines", "get_routine", "create_routine", "update_routine", "delete_routine", "create_routine_trigger", "update_routine_trigger", "delete_routine_trigger", "rotate_routine_trigger_secret", "run_routine", "fire_public_routine_trigger", "list_routine_runs",
+      "list_companies", "get_company", "create_company", "update_company", "update_company_branding", "upload_company_logo"
     ]
   }
 }
